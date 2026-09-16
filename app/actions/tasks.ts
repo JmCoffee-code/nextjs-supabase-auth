@@ -12,7 +12,7 @@ export const getTasks = async () => {
     } = await supabase.auth.getUser();
 
     if(!user) {
-        return { error: "Unauthorizes", data: null}
+        return { error: "Unauthorize", data: null}
     }
     const {data, error} = await supabase
     .from("tasks")

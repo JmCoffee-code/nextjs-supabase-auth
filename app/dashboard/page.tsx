@@ -1,6 +1,7 @@
 import { createClient } from "../lib/supabase/server";
 import { signOut, signUp } from "../actions/auth";
-import { LogOut } from "lucide-react";
+import { ListTodo, LogOut } from "lucide-react";
+import Link from "next/link";
 
 export default async function DashboardPage (){
     const supabase = await createClient();
@@ -27,13 +28,21 @@ export default async function DashboardPage (){
                 <div className="border border-gray-800 bg-gray-900 p-8 rounded-lg">
                     <div className="space-y-6">
                         <div>
-                            <label className="text-sm form-medium text-gray-400">{userName}</label>
-                            <p className="mt-1 text-lg text-white">userName</p>
+                            <label className="text-sm form-medium text-gray-400">Name</label>
+                            <p className="mt-1 text-lg text-white">{userName}</p>
                         </div>
                         <div>
-                            <label className="text-sm form-medium text-gray-400">{user.email}</label>
-                            <p className="mt-1 text-lg text-white">Email</p>
+                            <label className="text-sm form-medium text-gray-400">Email</label>
+                            <p className="mt-1 text-lg text-white">{user.email}</p>
                         </div>
+
+                        <Link
+                            href="/tasks"
+                            className="flex w-full items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-black rounded-lg bg-white"
+                        >
+                            <ListTodo className="h-4 w-4" />
+                            Manage Tasks
+                        </Link>
 
                         <form action={signOut}>
                             <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 text-white px-4 py-3 transition-colors hover:bg-gray-700 cursor-pointer">
