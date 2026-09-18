@@ -21,10 +21,11 @@ import {
 import type { Task } from "../lib/types/database";
 import { getTasks, deleteTasks } from "../actions/tasks";
 import { getUsers } from "../actions/users";
-import { PencilIcon, Plus, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, PencilIcon, Plus, Search, Trash2 } from "lucide-react";
 import { getPriorityBadgeColor, getStatusBadgeColor } from "../utils/table_healpers";
 import TaskModal from "./TaskModal";
 import { getPriority } from "os";
+import ConfirmModal from "./ConfirmModal";
 
 
 const TasksTable = () => {
@@ -37,7 +38,7 @@ const TasksTable = () => {
     const [globalFilter, setGlobalFilter] = useState("");
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
-        pageSize: 10
+        pageSize: 10,
     });
 
     // Modal State management
@@ -45,6 +46,8 @@ const TasksTable = () => {
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [isConfirModalOpen, setIsConfirmModalOpen] = useState(false);
     const [tasksToDelete, setTaskToDelete] = useState<Task | null>(null);
+
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const {data, isLoading, error} = useQuery({
         queryKey:['tasks'],
@@ -84,6 +87,27 @@ const TasksTable = () => {
         setIsModalOpen(true);
     };
 
+    const handleConfirmDelete = async () => {
+        if(!tasksToDelete) return;
+        setDeleteError(null);
+        const result = await deleteMutation.mutateAsync(tasksToDelete.id);
+        if(result.error) {
+            setDeleteError(result.error);
+        }
+        else {
+            setIsConfirmModalOpen(false);
+            setTaskToDelete(null);
+            setDeleteError(null);
+        }
+    };
+
+    const handleCloseConfirmModal = () => {
+        if(!deleteMutation.isPending) {
+            setIsConfirmModalOpen(false);
+            setTaskToDelete(null);
+            setDeleteError(null);
+        }
+    }
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
@@ -104,7 +128,7 @@ const TasksTable = () => {
     }; // Here in delete Modal I stop
 
     const handDeleteClick = (task: Task) => {
-        setSelectedTask(task);
+        setTaskToDelete(task);
         setIsConfirmModalOpen(true);
     }
 
@@ -160,7 +184,7 @@ const TasksTable = () => {
                 ),   
             },
             {
-                accessorKey: "Created At",
+                accessorKey: "created_at",
                 header: "Created At",
                 cell: (info) => {
                     const date = new Date(info.getValue() as string);
@@ -170,8 +194,9 @@ const TasksTable = () => {
                 },
             },
             {
-                accessorKey: "update_at",
-                header: "Update At",
+                accessorKey: "updated_at",
+                header: "Updated At",
+
                 cell: (info) => {
                     const date = new Date(info.getValue() as string);
                     return <div className="text-sm text-gray-400">
@@ -186,9 +211,12 @@ const TasksTable = () => {
                     const task = info.row.original;
                     return <div className="flex items-center gap-2">
 
-                        <button type="button" className="cursor-pointer" onClick={() => handleEdit(task)}
-                            disabled={deleteMutation.isPending}
-                            ><PencilIcon className="h-4 w-4 text-gray-400 hover:text-white"/>
+                        <button 
+                        type="button" className="cursor-pointer" 
+                        onClick={() => handleEdit(task)}
+                        disabled={deleteMutation.isPending}
+                            ><PencilIcon 
+                        className="h-4 w-4 text-gray-400 hover:text-white"/>
                         </button>
 
                         <button type="button" className="cursor-pointer"
@@ -254,9 +282,9 @@ const TasksTable = () => {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"/>
                 <input type="text" 
                 value={globalFilter ?? ""} 
-                onChange={() => {}}
+                onChange={(e) => setGlobalFilter(e.target.value)}
                 placeholder="Search..."
-                className="w-full rounded-lg border pl-10 bg-gray-800 pr-4 py-2 placeholder-gray-400"
+                className="w-full rounded-lg border pl-10 bg-gray-800 pr-4 py-2 placeholder-gray-400 text-white"
                 />
             </div>
             <div className="text-sm text-gray-400">
@@ -308,17 +336,87 @@ const TasksTable = () => {
                     ) : (
                         table.getRowModel().rows.map((row) => <tr key={row.id} className="hover:bg-gray-800">
                             {row.getVisibleCells().map((cell) => <td key={cell.id} className="whitespace=nowrap px-4 py-3 text-sm text-gray-300
-                        ">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>)
-                    )}
+                        ">{flexRender(cell.column.columnDef.cell, cell.getContext()
+                        )}
+                        </td>
+                        )}
+                        </tr>
+                    ))}
                 </tbody>
             </table>
         </div>
+
+        <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">Row per page: </span>
+                <select className="rounded-lg border px-2 py-1 text-sm bg-gray-800 text-white focus:border-white focus:ring-white">{[5, 10, 20, 30, 50].map((pageSize) => <option key={pageSize} value={pageSize}>{pageSize}</option>)}
+                </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">
+                    Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                </span>
+
+                <div className="flex items-center gap-2">
+                    <button 
+                    className="rounded-lg border p-1.5 disabled:cursor-not-allowed disabled:opacity-50 border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700" 
+                    disabled={!table.getCanPreviousPage()}
+                    onClick={() => table.setPageIndex(0)}
+                    >
+                        <ChevronsLeft className="h-4 w-4 text-gray-300"/>
+                    </button>
+
+                    <button className="rounded-lg border p-1.5 disabled:cursor-not-allowed disabled:opacity-50 border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700"
+                    disabled={!table.getCanPreviousPage()}
+                    onClick={() => table.previousPage()}
+                    >
+                        <ChevronLeft className="h-4 w-4 text-gray-300"/>
+                    </button>
+
+                    <button className="rounded-lg border p-1.5 disabled:cursor-not-allowed disabled:opacity-50 border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700"
+                    disabled={!table.getCanNextPage()}
+                    onClick={() => table.nextPage()}
+                    >
+                        <ChevronRight className="h-4 w-4 text-gray-300"/>
+                    </button>
+
+                    <button className="rounded-lg border p-1.5 disabled:cursor-not-allowed disabled:opacity-50 border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700"
+                    disabled={!table.getCanNextPage()}
+                    onClick={() => table.setPageIndex(table.getPageCount() -1)}
+                    
+                    >
+                        <ChevronsRight className="h-4 w-4 text-gray-300"/>
+                    </button>
+
+                </div>
+            </div>
+
+        </div>
+
         <TaskModal 
         isOpen={isModalOpen} 
         onClose={handleCloseModal} 
-        task={selectedTask}/>
+        task={selectedTask}
+        />
+        <ConfirmModal 
+        isOpen={isConfirModalOpen} 
+        onClose={handleCloseConfirmModal} 
+        onConfirm={handleConfirmDelete}
+        title="Delete Tasks"
+        error={deleteError}
+        message={
+            tasksToDelete 
+            ? `Are you sure you want to delete (${tasksToDelete.title}) this action cannot be undone.` 
+            : `Are you sure you want to delete this task? this action cannot be undone`
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+        />
     </>
   );
-}
+};
 
 export default TasksTable

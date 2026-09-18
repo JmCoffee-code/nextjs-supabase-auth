@@ -109,7 +109,7 @@ export const updateTask = async (id: string, formdata: FormData) => {
 
     const canEdit = task.created_by === user.id || task.assigned_to === user.id;
 
-    if(canEdit) {
+    if(!canEdit) {
         return {error: "You do not have permission to edit this tasks"}
     };
 
