@@ -1,4 +1,4 @@
-const getStatusBagdeColor = ( status: string ) => {
+export const getStatusBadgeColor = ( status: string ) => {
     
     switch (status) {
         case "completed":

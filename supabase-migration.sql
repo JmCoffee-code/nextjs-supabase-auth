@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 
     priority TEXT NOT NULL DEFAULT 'medium'
 
-        CHECK(status IN ('low', 'medium', 'high', 'urgent')),
+        CHECK(priority IN ('low', 'medium', 'high', 'urgent')),
 
     assigned_to UUID REFERENCES auth.users(id) ON DELETE CASCADE,
 

@@ -74,7 +74,7 @@ export const createTask = async (formData: FormData) => {
         return {error: "Title is required"};
     }
 
-    const {error} = await supabase.from("task").insert({
+    const {error} = await supabase.from("tasks").insert({
         ...taskData,
         created_by: user.id
     });
@@ -131,7 +131,7 @@ export const updateTask = async (id: string, formdata: FormData) => {
     updateData.assigned_to = assigned_to || null;
 
     const {error} = await supabase
-    .from("task")
+    .from("tasks")
     .update(updateData)
     .eq("id", id)
 
